@@ -1,23 +1,24 @@
 <script lang="ts">
-  import * as PIXI from "pixi.js";
+  import { Application, Sprite, Container, Graphics } from "pixi.js";
   import { onMount } from "svelte";
 
   let el: HTMLDivElement;
 
   onMount(() => {
-    const app = new PIXI.Application({
+    const app = new Application({
       background: "#fff",
       width: 1024,
       height: 682,
+      // resizeTo: el,
     });
-    const outline = PIXI.Sprite.from("outline.webp");
-    const cursor = PIXI.Sprite.from("verf-roller.png");
+    const outline = Sprite.from("outline.webp");
+    const cursor = Sprite.from("verf-roller.png");
     cursor.visible = false;
 
-    const original = PIXI.Sprite.from("color.jpg");
-    const container = new PIXI.Container();
+    const original = Sprite.from("color.jpg");
+    const container = new Container();
     container.addChild(original);
-    const renderTexture = new PIXI.Graphics();
+    const renderTexture = new Graphics();
     app.stage.addChild(outline);
     container.mask = renderTexture;
     app.stage.addChild(container);
@@ -25,46 +26,46 @@
     const canvas = app.view as HTMLCanvasElement;
     el.appendChild(canvas);
     let painting: false | { x: number; y: number } = false;
-    canvas.addEventListener("mousedown", (e) => {
-      painting = { x: e.offsetX, y: e.offsetY };
+    app.stage.interactive = true;
+    app.stage.on("pointerdown", (e) => {
+      painting = { x: e.globalX, y: e.globalY };
     });
-    canvas.addEventListener("mouseup", (e) => {
+    app.stage.on("pointerup", (e) => {
       painting = false;
     });
-    canvas.addEventListener("mousemove", (e) => {
-      const { offsetX, offsetY } = e;
+    app.stage.on("pointermove", (e) => {
+      const { globalX, globalY } = e;
 
-      cursor.x = offsetX - 100;
-      cursor.y = offsetY - 15;
+      cursor.position.set(globalX - 100, globalY - 15);
       if (painting) {
         const steps =
           1 +
           Math.ceil(
             Math.max(
-              Math.abs(offsetX - painting.x),
-              Math.abs(offsetY - painting.y),
-            ) / 5,
+              Math.abs(globalX - painting.x),
+              Math.abs(globalY - painting.y),
+            ) / 15,
           );
         for (let i = 0; i < steps; i += 1) {
           renderTexture.beginFill(0x000000);
           const factor = i / steps;
           const invertedFactor = 1 - factor;
           renderTexture.drawRoundedRect(
-            painting.x * factor + offsetX * invertedFactor - 100,
-            painting.y * factor + offsetY * invertedFactor - 15,
+            painting.x * factor + globalX * invertedFactor - 100,
+            painting.y * factor + globalY * invertedFactor - 15,
             200,
             30,
             10,
           );
           renderTexture.endFill();
         }
-        painting = { x: offsetX, y: offsetY };
+        painting = { x: globalX, y: globalY };
       }
     });
-    canvas.addEventListener("mouseenter", () => {
+    app.stage.on("pointerenter", () => {
       cursor.visible = true;
     });
-    canvas.addEventListener("mouseleave", () => {
+    app.stage.on("pointerleave", () => {
       cursor.visible = false;
     });
     return () => {
@@ -77,12 +78,20 @@
 <svelte:head>
   <title>Paint demo page</title>
 </svelte:head>
-<div class="canvas" bind:this={el}></div>
+<div class="wrapper" bind:this={el} />
 
 <style>
-  .canvas {
-    width: 1024px;
-    margin: auto;
+  .wrapper {
     cursor: none;
+
+    aspect-ratio: 1024/682;
+    width: 1024px;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  :global(canvas) {
+    width: 100%;
+    height: 100%;
   }
 </style>
