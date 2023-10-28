@@ -24,13 +24,42 @@
     app.stage.addChild(cursor);
     const canvas = app.view as HTMLCanvasElement;
     el.appendChild(canvas);
+    let painting: false | { x: number; y: number } = false;
+    canvas.addEventListener("mousedown", (e) => {
+      painting = { x: e.offsetX, y: e.offsetY };
+    });
+    canvas.addEventListener("mouseup", (e) => {
+      painting = false;
+    });
     canvas.addEventListener("mousemove", (e) => {
       const { offsetX, offsetY } = e;
-      renderTexture.beginFill(0xff00ff);
-      renderTexture.drawRect(offsetX - 100, offsetY - 15, 200, 30);
-      renderTexture.endFill();
+
       cursor.x = offsetX - 100;
       cursor.y = offsetY - 15;
+      if (painting) {
+        const steps =
+          1 +
+          Math.ceil(
+            Math.max(
+              Math.abs(offsetX - painting.x),
+              Math.abs(offsetY - painting.y),
+            ) / 5,
+          );
+        for (let i = 0; i < steps; i += 1) {
+          renderTexture.beginFill(0x000000);
+          const factor = i / steps;
+          const invertedFactor = 1 - factor;
+          renderTexture.drawRoundedRect(
+            painting.x * factor + offsetX * invertedFactor - 100,
+            painting.y * factor + offsetY * invertedFactor - 15,
+            200,
+            30,
+            10,
+          );
+          renderTexture.endFill();
+        }
+        painting = { x: offsetX, y: offsetY };
+      }
     });
     canvas.addEventListener("mouseenter", () => {
       cursor.visible = true;
