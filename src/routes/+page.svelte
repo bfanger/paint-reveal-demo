@@ -9,8 +9,9 @@
       background: "#fff",
       width: 1024,
       height: 682,
-      // resizeTo: el,
     });
+    // eslint-disable-next-line no-underscore-dangle
+    (window as any).__PIXI_APP__ = app;
     const outline = Sprite.from("outline.webp");
     const cursor = Sprite.from("verf-roller.png");
     cursor.visible = false;
@@ -26,11 +27,11 @@
     const canvas = app.view as HTMLCanvasElement;
     el.appendChild(canvas);
     let painting: false | { x: number; y: number } = false;
-    app.stage.interactive = true;
+    app.stage.eventMode = "dynamic";
     app.stage.on("pointerdown", (e) => {
       painting = { x: e.globalX, y: e.globalY };
     });
-    app.stage.on("pointerup", (e) => {
+    app.stage.on("pointerup", () => {
       painting = false;
     });
     app.stage.on("pointermove", (e) => {
